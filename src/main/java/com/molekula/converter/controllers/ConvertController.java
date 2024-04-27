@@ -10,13 +10,19 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @RestController
 public class ConvertController {
 
+    private static final List<String> IMAGE_FORMATS = Arrays.asList(
+            "jpeg", "png", "gif", "bmp", "tiff", "psd", "svg", "webp", "heic", "raw", "ico", "pbm", "pgm", "ppm"
+    );
+
     @GetMapping("api/convert-png-to-jpg")
     public ResponseEntity<Object> convertPNGtoJPG(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
+        if (file.isEmpty() || IMAGE_FORMATS.contains(ImageConverterUtils.getFileFormat(file.getOriginalFilename()))) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
         try {
@@ -31,7 +37,7 @@ public class ConvertController {
     @GetMapping("api/resize")
     public ResponseEntity<Object> resize(@RequestParam("file") MultipartFile file,
                                          @RequestParam("multiplier") double multiplier) {
-        if (file.isEmpty()) {
+        if (file.isEmpty() || ImageConverterUtils.getFileFormat(file.getOriginalFilename()) == null) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
         try {

@@ -7,7 +7,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class ImageConverterUtils {
-
     public static byte[] convertPNGtoJPG(byte[] img) {
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(img);
@@ -34,14 +33,14 @@ public class ImageConverterUtils {
             BufferedImage originalImage = ImageIO.read(bis);
             bis.close();
 
-            int newWidth = (int)(originalImage.getWidth() * multiplier);
-            int newHeight = (int)(originalImage.getHeight() * multiplier);
+            int newWidth = (int) (originalImage.getWidth() * multiplier);
+            int newHeight = (int) (originalImage.getHeight() * multiplier);
 
             BufferedImage newImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
             newImage.createGraphics().drawImage(originalImage, 0, 0, newWidth, newHeight, null);
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ImageIO.write(newImage, getImageFormat(filename), bos);
+            ImageIO.write(newImage, getFileFormat(filename), bos);
             bos.close();
 
             return bos.toByteArray();
@@ -51,9 +50,14 @@ public class ImageConverterUtils {
         }
     }
 
-    private static String getImageFormat(String filename) {
-        String [] split = filename.split("\\.");
-        System.out.println(split[split.length - 1]);
+    public static String getFileFormat(String filename) {
+        if (filename == null) {
+            return null;
+        }
+        String[] split = filename.toLowerCase().split("\\.");
+        if (split.length == 0) {
+            return null;
+        }
         return split[split.length - 1];
     }
 }
