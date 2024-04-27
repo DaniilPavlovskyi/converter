@@ -1,15 +1,22 @@
 package com.molekula.converter.utilities;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
 
 public class ImageConverterUtils {
-    public static byte[] convertPNGtoJPG(byte[] img) {
+    public static byte[] convertPNGtoJPG(MultipartFile file) {
         try {
-            ByteArrayInputStream bis = new ByteArrayInputStream(img);
+            ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
             BufferedImage originalImage = ImageIO.read(bis);
             bis.close();
 
@@ -27,9 +34,40 @@ public class ImageConverterUtils {
         }
     }
 
-    public static byte[] resize(byte[] img, double multiplier, String filename) {
+    public static byte[] compress(MultipartFile file, double multiplier) {
         try {
-            ByteArrayInputStream bis = new ByteArrayInputStream(img);
+            ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
+            BufferedImage originalImage = ImageIO.read(bis);
+            bis.close();
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+            Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(file.getContentType().split("/")[1]);
+            ImageWriter writer = writers.next();
+
+            ImageOutputStream ios = ImageIO.createImageOutputStream(bos);
+            writer.setOutput(ios);
+
+            ImageWriteParam param = writer.getDefaultWriteParam();
+            param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            param.setCompressionQuality((float) multiplier);
+
+            writer.write(null, new IIOImage(originalImage, null, null), param);
+
+            bos.close();
+            ios.close();
+            writer.dispose();
+
+            return bos.toByteArray();
+        } catch (IOException e) {
+            System.out.println("Error occurred: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static byte[] resize(MultipartFile file, double multiplier) {
+        try {
+            ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
             BufferedImage originalImage = ImageIO.read(bis);
             bis.close();
 
@@ -40,7 +78,7 @@ public class ImageConverterUtils {
             newImage.createGraphics().drawImage(originalImage, 0, 0, newWidth, newHeight, null);
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ImageIO.write(newImage, getFileFormat(filename), bos);
+            ImageIO.write(newImage, file.getContentType().split("/")[1], bos);
             bos.close();
 
             return bos.toByteArray();
@@ -48,16 +86,5 @@ public class ImageConverterUtils {
             System.out.println("Error occurred: " + e.getMessage());
             return null;
         }
-    }
-
-    public static String getFileFormat(String filename) {
-        if (filename == null) {
-            return null;
-        }
-        String[] split = filename.toLowerCase().split("\\.");
-        if (split.length == 0) {
-            return null;
-        }
-        return split[split.length - 1];
     }
 }

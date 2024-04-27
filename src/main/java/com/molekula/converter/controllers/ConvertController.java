@@ -17,35 +17,64 @@ import java.util.List;
 public class ConvertController {
 
     private static final List<String> IMAGE_FORMATS = Arrays.asList(
-            "jpeg", "png", "gif", "bmp", "tiff", "psd", "svg", "webp", "heic", "raw", "ico", "pbm", "pgm", "ppm"
+            "jpeg", "jpg", "png", "gif"/*
+            for future
+            , "bmp", "tiff", "svg", "webp", "heic", "raw", "pbm", "pgm", "ppm", "ico"
+            */
     );
 
     @GetMapping("api/convert-png-to-jpg")
     public ResponseEntity<Object> convertPNGtoJPG(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty() || IMAGE_FORMATS.contains(ImageConverterUtils.getFileFormat(file.getOriginalFilename()))) {
+        if (isNotImage(file)) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
-        try {
-            byte[] jpgImageData = ImageConverterUtils.convertPNGtoJPG(file.getBytes());
-            return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(jpgImageData);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to convert the image file.");
-        }
+
+        byte[] jpgImageData = ImageConverterUtils.convertPNGtoJPG(file);
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(jpgImageData);
     }
 
     @GetMapping("api/resize")
-    public ResponseEntity<Object> resize(@RequestParam("file") MultipartFile file,
-                                         @RequestParam("multiplier") double multiplier) {
-        if (file.isEmpty() || ImageConverterUtils.getFileFormat(file.getOriginalFilename()) == null) {
+    public ResponseEntity<Object> resizeImage(@RequestParam("file") MultipartFile file,
+                                              @RequestParam("multiplier") double multiplier) {
+        if (isNotImage(file)) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
+        byte[] resizedImageData = ImageConverterUtils.resize(file, multiplier);
+        MediaType contentType = MediaType.parseMediaType(file.getContentType());
+        return ResponseEntity.ok().contentType(contentType).body(resizedImageData);
+    }
+    @GetMapping("api/compress")
+    public ResponseEntity<Object> compressImage(@RequestParam("file") MultipartFile file,
+                                                @RequestParam("quality") double quality) {
+        if (isNotImage(file)) {
+            return ResponseEntity.badRequest().body("Please upload an image file.");
+        }
+
+        if(quality < 0 || quality > 1) {
+            return ResponseEntity.badRequest().body("Quality should be in range [0, 1].");
+        }
+
         try {
-            byte[] jpgImageData = ImageConverterUtils.resize(file.getBytes(), multiplier, file.getOriginalFilename());
-            return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(jpgImageData);
+            byte[] originalImageData = file.getBytes();
+            byte[] compressedImageData = ImageConverterUtils.compress(file, quality);
+
+            double compressionRatio = 0;
+            if (compressedImageData != null) {
+                compressionRatio = (double) compressedImageData.length / originalImageData.length;
+            }
+
+            if (compressionRatio >= 1) {
+                return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(originalImageData);
+            } else {
+                return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(compressedImageData);
+            }
         } catch (IOException e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to convert the image file.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to compress the image file.");
         }
+    }
+
+    private boolean isNotImage(MultipartFile file) {
+        return file.isEmpty() || !IMAGE_FORMATS.contains(file.getContentType().split("/")[1]);
     }
 }
