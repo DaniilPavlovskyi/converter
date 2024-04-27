@@ -15,7 +15,7 @@ import java.io.IOException;
 public class ConvertController {
 
     @GetMapping("api/convert-png-to-jpg")
-    public ResponseEntity<Object> convertPngToJpg(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Object> convertPNGtoJPG(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
@@ -29,17 +29,17 @@ public class ConvertController {
     }
 
     @GetMapping("api/resize")
-    public ResponseEntity<Object> resize(@RequestParam("file") MultipartFile file, @RequestParam("") double) {
+    public ResponseEntity<Object> resize(@RequestParam("file") MultipartFile file,
+                                         @RequestParam("multiplier") double multiplier) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
         try {
-            byte[] jpgImageData = ImageConverterUtils.convertPNGtoJPG(file.getBytes());
+            byte[] jpgImageData = ImageConverterUtils.resize(file.getBytes(), multiplier, file.getOriginalFilename());
             return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(jpgImageData);
         } catch (IOException e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to convert the image file.");
         }
     }
-
 }
