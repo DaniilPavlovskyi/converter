@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,14 +22,19 @@ public class ConvertController {
             */
     );
 
-    @GetMapping("api/convert-png-to-jpg")
-    public ResponseEntity<Object> convertPNGtoJPG(@RequestParam("file") MultipartFile file) {
+    @GetMapping("api/convert")
+    public ResponseEntity<Object> convert(@RequestParam("file") MultipartFile file,
+                                               @RequestParam("type") String type) {
         if (isNotImage(file)) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
 
-        byte[] jpgImageData = ImageConverterUtils.convertPNGtoJPG(file);
-        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(jpgImageData);
+        if (!IMAGE_FORMATS.contains(type)) {
+            return ResponseEntity.badRequest().body("Please select type to convert.");
+        }
+
+        byte[] imageData = ImageConverterUtils.convertToDefaultType(file, type);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/" + type)).body(imageData);
     }
 
     @GetMapping("api/resize")
@@ -68,13 +72,19 @@ public class ConvertController {
             } else {
                 return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(compressedImageData);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to compress the image file.");
         }
     }
 
     private boolean isNotImage(MultipartFile file) {
-        return file.isEmpty() || !IMAGE_FORMATS.contains(file.getContentType().split("/")[1]);
+        return file.isEmpty() ||
+                file.getContentType() == null ||
+                !IMAGE_FORMATS.contains(file.getContentType().split("/")[1]);
+    }
+
+    private String getImageType(MultipartFile file) {
+        return file.getContentType().split("/")[1];
     }
 }

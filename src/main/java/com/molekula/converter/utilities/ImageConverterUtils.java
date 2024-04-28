@@ -10,11 +10,10 @@ import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Iterator;
 
 public class ImageConverterUtils {
-    public static byte[] convertPNGtoJPG(MultipartFile file) {
+    public static byte[] convertToDefaultType(MultipartFile file, String type) {
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
             BufferedImage originalImage = ImageIO.read(bis);
@@ -24,11 +23,11 @@ public class ImageConverterUtils {
             newImage.createGraphics().drawImage(originalImage, 0, 0, null);
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ImageIO.write(newImage, "jpg", bos);
+            ImageIO.write(newImage, type, bos);
             bos.close();
 
             return bos.toByteArray();
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("Error occurred: " + e.getMessage());
             return null;
         }
@@ -59,7 +58,7 @@ public class ImageConverterUtils {
             writer.dispose();
 
             return bos.toByteArray();
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("Error occurred: " + e.getMessage());
             return null;
         }
@@ -82,7 +81,7 @@ public class ImageConverterUtils {
             bos.close();
 
             return bos.toByteArray();
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("Error occurred: " + e.getMessage());
             return null;
         }
