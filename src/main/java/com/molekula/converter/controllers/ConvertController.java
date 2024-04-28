@@ -9,32 +9,48 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
 @RestController
 public class ConvertController {
-
     private static final List<String> IMAGE_FORMATS = Arrays.asList(
-            "jpeg", "jpg", "png", "gif"/*
+            "jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif","pbm", "pgm", "ppm", "svg+xml", "webp", "heic", "raw", "ico"
+    );
+    private static final List<String> DEFAULT_IMAGE_FORMATS = Arrays.asList(
+            "jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif"/*
             for future
-            , "bmp", "tiff", "svg", "webp", "heic", "raw", "pbm", "pgm", "ppm", "ico"
+            ,"pbm", "pgm", "ppm" "svg", "webp", "heic", "raw", "ico"
             */
     );
 
     @GetMapping("api/convert")
     public ResponseEntity<Object> convert(@RequestParam("file") MultipartFile file,
-                                               @RequestParam("type") String type) {
+                                               @RequestParam("type") String type) throws IOException {
         if (isNotImage(file)) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
+        if (DEFAULT_IMAGE_FORMATS.contains(type)) {
+            byte[] imageData = ImageConverterUtils.convertToDefaultType(file, type);
+            return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/" + type)).body(imageData);
+        } else if (type.equals("svg")) {
+            saveFile(file, file.getOriginalFilename());
+            ImageConverterUtils.convertToSVG("img/" + file.getOriginalFilename());
 
-        if (!IMAGE_FORMATS.contains(type)) {
+            File svgFile = new File("img/" + file.getOriginalFilename());
+            byte[] svgBytes = Files.readAllBytes(svgFile.toPath());
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType("image/svg+xml"))
+                    .body(svgBytes);
+        } else {
             return ResponseEntity.badRequest().body("Please select type to convert.");
         }
-
-        byte[] imageData = ImageConverterUtils.convertToDefaultType(file, type);
-        return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/" + type)).body(imageData);
     }
 
     @GetMapping("api/resize")
@@ -44,8 +60,7 @@ public class ConvertController {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
         byte[] resizedImageData = ImageConverterUtils.resize(file, multiplier);
-        MediaType contentType = MediaType.parseMediaType(file.getContentType());
-        return ResponseEntity.ok().contentType(contentType).body(resizedImageData);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(resizedImageData);
     }
     @GetMapping("api/compress")
     public ResponseEntity<Object> compressImage(@RequestParam("file") MultipartFile file,
@@ -84,7 +99,14 @@ public class ConvertController {
                 !IMAGE_FORMATS.contains(file.getContentType().split("/")[1]);
     }
 
-    private String getImageType(MultipartFile file) {
-        return file.getContentType().split("/")[1];
+    private void saveFile(MultipartFile multipartFile, String fileName) {
+        try {
+            byte[] fileBytes = multipartFile.getBytes();
+            Path uploadPath = Paths.get("img");
+            Path filePath = uploadPath.resolve(fileName);
+            Files.write(filePath, fileBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.molekula.converter.utilities;
 
+import com.aspose.words.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.IIOImage;
@@ -30,6 +31,18 @@ public class ImageConverterUtils {
         } catch (Exception e) {
             System.out.println("Error occurred: " + e.getMessage());
             return null;
+        }
+    }
+
+    public static void convertToSVG(String file) {
+        try {
+            Document doc = new Document();
+            DocumentBuilder builder = new DocumentBuilder(doc);
+
+            Shape shape = builder.insertImage(file);
+            shape.getShapeRenderer().save(file + ".svg", new ImageSaveOptions(SaveFormat.SVG));
+        } catch (Exception e) {
+            System.out.println("Error occurred: " + e.getMessage());
         }
     }
 
