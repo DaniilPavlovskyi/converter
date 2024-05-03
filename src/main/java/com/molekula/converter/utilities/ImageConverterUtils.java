@@ -9,8 +9,7 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.*;
 import java.util.Iterator;
 
 public class ImageConverterUtils {
@@ -41,6 +40,18 @@ public class ImageConverterUtils {
 
             Shape shape = builder.insertImage(file);
             shape.getShapeRenderer().save(file + ".svg", new ImageSaveOptions(SaveFormat.SVG));
+        } catch (Exception e) {
+            System.out.println("Error occurred: " + e.getMessage());
+        }
+    }
+
+    public static void convertFromSVG(String file) {
+        try {
+            Document doc = new Document();
+            DocumentBuilder builder = new DocumentBuilder(doc);
+
+            Shape shape = builder.insertImage(file);
+            shape.getShapeRenderer().save(file + ".png", new ImageSaveOptions(SaveFormat.PNG));
         } catch (Exception e) {
             System.out.println("Error occurred: " + e.getMessage());
         }
@@ -77,24 +88,36 @@ public class ImageConverterUtils {
         }
     }
 
+    public static byte[] resizeCommon(InputStream inputStream, double multiplier) throws IOException {
+        BufferedImage originalImage = ImageIO.read(inputStream);
+        inputStream.close();
+
+        int newWidth = (int) (originalImage.getWidth() * multiplier);
+        int newHeight = (int) (originalImage.getHeight() * multiplier);
+
+        BufferedImage newImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
+        newImage.createGraphics().drawImage(originalImage, 0, 0, newWidth, newHeight, null);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ImageIO.write(newImage, "png", bos);
+        bos.close();
+
+        return bos.toByteArray();
+    }
+
     public static byte[] resize(MultipartFile file, double multiplier) {
         try {
-            ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
-            BufferedImage originalImage = ImageIO.read(bis);
-            bis.close();
+            return resizeCommon(file.getInputStream(), multiplier);
+        } catch (IOException e) {
+            System.out.println("Error occurred: " + e.getMessage());
+            return null;
+        }
+    }
 
-            int newWidth = (int) (originalImage.getWidth() * multiplier);
-            int newHeight = (int) (originalImage.getHeight() * multiplier);
-
-            BufferedImage newImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
-            newImage.createGraphics().drawImage(originalImage, 0, 0, newWidth, newHeight, null);
-
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ImageIO.write(newImage, file.getContentType().split("/")[1], bos);
-            bos.close();
-
-            return bos.toByteArray();
-        } catch (Exception e) {
+    public static byte[] resize(File file, double multiplier) {
+        try {
+            return resizeCommon(new FileInputStream(file), multiplier);
+        } catch (IOException e) {
             System.out.println("Error occurred: " + e.getMessage());
             return null;
         }
