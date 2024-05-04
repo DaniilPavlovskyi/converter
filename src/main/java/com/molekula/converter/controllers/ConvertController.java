@@ -51,7 +51,7 @@ public class ConvertController {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
 
-        if (DEFAULT_IMAGE_FORMATS.stream().anyMatch(e -> file.getContentType().contains(e))) {
+        if (DEFAULT_IMAGE_FORMATS.stream().anyMatch(e -> file.getContentType().endsWith(e))) {
             byte[] resizedImageData = ImageConverterUtils.resize(file, multiplier);
             return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(resizedImageData);
         } else if (file.getContentType().equals("image/svg+xml")) {
@@ -100,6 +100,19 @@ public class ConvertController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to compress the image file.");
         }
+    }
+
+    @GetMapping("api/rotate")
+    public ResponseEntity<Object> rotateImage(@RequestParam("file") MultipartFile file, @RequestParam("angle") double angle) throws IOException {
+        if (isNotImage(file)) {
+            return ResponseEntity.badRequest().body("Please upload an image file.");
+        }
+
+        if (DEFAULT_IMAGE_FORMATS.stream().anyMatch(e -> file.getContentType().endsWith(e))) {
+            byte[] resizedImageData = ImageConverterUtils.rotate(file, angle);
+            return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(resizedImageData);
+        }
+        return ResponseEntity.badRequest().body("This type of image file is not supported.");
     }
 
     private boolean isNotImage(MultipartFile file) {

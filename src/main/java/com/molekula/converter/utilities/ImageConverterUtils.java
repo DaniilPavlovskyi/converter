@@ -1,6 +1,7 @@
 package com.molekula.converter.utilities;
 
 import com.aspose.words.*;
+import com.aspose.words.Shape;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.IIOImage;
@@ -8,11 +9,14 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Iterator;
 
 public class ImageConverterUtils {
+
     public static byte[] convertToDefaultType(MultipartFile file, String type) {
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
@@ -87,6 +91,40 @@ public class ImageConverterUtils {
             return null;
         }
     }
+    public static byte[] rotate(MultipartFile file, double angleDegrees) throws IOException {
+        ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
+        BufferedImage originalImage = ImageIO.read(bis);
+        bis.close();
+
+        BufferedImage rotatedImage = rotate(originalImage, angleDegrees);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ImageIO.write(rotatedImage, file.getContentType().split("/")[1], bos);
+        bos.close();
+
+        return bos.toByteArray();
+    }
+    private static BufferedImage rotate(BufferedImage image, double angleDegrees) {
+        double radians = Math.toRadians(angleDegrees);
+        double sin = Math.abs(Math.sin(radians));
+        double cos = Math.abs(Math.cos(radians));
+        int newWidth = (int) Math.round(image.getWidth() * cos + image.getHeight() * sin);
+        int newHeight = (int) Math.round(image.getWidth() * sin + image.getHeight() * cos);
+
+        BufferedImage rotatedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = rotatedImage.createGraphics();
+        AffineTransform transform = new AffineTransform();
+        transform.translate((newWidth - image.getWidth()) / 2.0, (newHeight - image.getHeight()) / 2.0);
+        int x = image.getWidth() / 2;
+        int y = image.getHeight() / 2;
+        transform.rotate(Math.toRadians(angleDegrees), x, y);
+        g2d.setTransform(transform);
+        g2d.drawImage(image, 0, 0, null);
+        g2d.dispose();
+
+        return rotatedImage;
+    }
+
 
     public static byte[] resizeCommon(InputStream inputStream, double multiplier) throws IOException {
         BufferedImage originalImage = ImageIO.read(inputStream);
