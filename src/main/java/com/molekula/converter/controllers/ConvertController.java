@@ -49,14 +49,14 @@ public class ConvertController {
             return ResponseEntity.badRequest().body("Please upload an SVG image file.");
         }
         byte[] fileBytes = file.getBytes();
-        Path path = Paths.get("img/svg/convert/" + file.getOriginalFilename());
+        Path path = Path.of(targetConvertPath + file.getOriginalFilename());
+        if (isPathCorrect(path)) {
+            return ResponseEntity.badRequest().body("Entry is outside of the target directory");
+        }
         Files.write(path, fileBytes);
         SVGConverterUtils.convertFromSVG(path.toString());
 
         File pngFile = new File(targetConvertPath + file.getOriginalFilename() + ".png");
-        if (!pngFile.toPath().normalize().startsWith(targetConvertPath)) {
-            return ResponseEntity.badRequest().body("Entry is outside of the target directory");
-        }
 
         type = type.equals("jpg") ? "jpeg" : type.equals("tif") ? "tiff" : type;
         byte[] pngBytes = Files.readAllBytes(pngFile.toPath());
@@ -75,17 +75,14 @@ public class ConvertController {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
         saveFile(file, file.getOriginalFilename(), "svg/convert/");
-        Path path = Path.of(targetConvertPath + file.getOriginalFilename());
-        if (!path.normalize().startsWith(targetConvertPath)) {
+        if (isPathCorrect(Path.of(targetConvertPath + file.getOriginalFilename()))) {
             return ResponseEntity.badRequest().body("Entry is outside of the target directory");
         }
 
         SVGConverterUtils.convertToSVG("img/svg/convert/" + file.getOriginalFilename());
 
         File svgFile = new File(targetConvertPath + file.getOriginalFilename() + ".svg");
-        if (!svgFile.toPath().normalize().startsWith(targetConvertPath)) {
-            return ResponseEntity.badRequest().body("Entry is outside of the target directory");
-        }
+
         byte[] svgBytes = Files.readAllBytes(svgFile.toPath());
 
         return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/svg+xml")).body(svgBytes);
@@ -157,6 +154,10 @@ public class ConvertController {
 
     private boolean isNotDefaultImage(MultipartFile file) {
         return file.isEmpty() || file.getContentType() == null || !DEFAULT_IMAGE_FORMATS.contains(file.getContentType().split("/")[1]);
+    }
+
+    private boolean isPathCorrect(Path path) {
+        return path.normalize().startsWith(targetConvertPath);
     }
 
     private void saveFile(MultipartFile multipartFile, String fileName, String type) {
