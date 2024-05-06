@@ -46,7 +46,7 @@ public class ConvertController {
 
     @GetMapping("api/convert-from-svg")
     public ResponseEntity<Object> convertFromSVG(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) throws IOException {
-        if (file.isEmpty() || file.getContentType() == null || !file.getContentType().equals("image/svg+xml")) {
+        if (file.isEmpty() || file.getContentType() == null || isNotSVG(file.getContentType())) {
             return ResponseEntity.badRequest().body("Please upload an SVG image file.");
         }
         byte[] fileBytes = file.getBytes();
@@ -154,7 +154,7 @@ public class ConvertController {
     }
 
     private boolean isNotSVG(String type) {
-        return !type.equals("image/svg+xml");
+        return !"image/svg+xml".equals(type);
     }
 
     private boolean isPathWrong(Path path) {
