@@ -50,14 +50,16 @@ public class ConvertController {
         }
         byte[] fileBytes = file.getBytes();
         Path path = Path.of(targetConvertPath +file.getOriginalFilename());
-        if (isPathCorrect(path)) {
+        if (isPathWrong(path)) {
+            System.out.println(path);
             return ResponseEntity.badRequest().body("Entry is outside of the target directory");
         }
         Files.write(path, fileBytes);
         SVGConverterUtils.convertFromSVG(path.toString());
 
         File pngFile = new File(targetConvertPath + file.getOriginalFilename() + ".png");
-        if (isPathCorrect(pngFile.toPath())) {
+        if (isPathWrong(pngFile.toPath())) {
+            System.out.println(pngFile.toPath());
             return ResponseEntity.badRequest().body("Entry is outside of the target directory");
         }
         type = type.equals("jpg") ? "jpeg" : type.equals("tif") ? "tiff" : type;
@@ -77,7 +79,7 @@ public class ConvertController {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
         saveFile(file, file.getOriginalFilename(), "svg/convert/");
-        if (isPathCorrect(Path.of(targetConvertPath + file.getOriginalFilename()))) {
+        if (isPathWrong(Path.of(targetConvertPath + file.getOriginalFilename()))) {
             return ResponseEntity.badRequest().body("Entry is outside of the target directory");
         }
 
@@ -85,6 +87,9 @@ public class ConvertController {
 
         File svgFile = new File(targetConvertPath + file.getOriginalFilename() + ".svg");
 
+        if (isPathWrong(svgFile.toPath())) {
+            return ResponseEntity.badRequest().body("Entry is outside of the target directory");
+        }
         byte[] svgBytes = Files.readAllBytes(svgFile.toPath());
 
         return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/svg+xml")).body(svgBytes);
@@ -158,8 +163,8 @@ public class ConvertController {
         return file.isEmpty() || file.getContentType() == null || !DEFAULT_IMAGE_FORMATS.contains(file.getContentType().split("/")[1]);
     }
 
-    private boolean isPathCorrect(Path path) {
-        return path.normalize().startsWith(targetConvertPath);
+    private boolean isPathWrong(Path path) {
+        return !path.normalize().toString().startsWith(targetConvertPath.toString());
     }
 
     private void saveFile(MultipartFile multipartFile, String fileName, String type) {
