@@ -27,7 +27,7 @@ public class ConvertController {
             ,"pbm", "pgm", "ppm" "svg", "webp", "heic", "raw", "ico"
             */);
 
-    private static final String targetConvertDirectory = "img/svg/convert/";
+    private static final String targetConvertDirectory = "img/svg/convert/convert-";
     private static final Path targetConvertPath = new File(targetConvertDirectory).toPath().normalize();
 
     @GetMapping("api/convert")
@@ -49,7 +49,7 @@ public class ConvertController {
             return ResponseEntity.badRequest().body("Please upload an SVG image file.");
         }
         byte[] fileBytes = file.getBytes();
-        Path path = Path.of(targetConvertPath + file.getOriginalFilename());
+        Path path = Path.of(targetConvertPath +file.getOriginalFilename());
         if (isPathCorrect(path)) {
             return ResponseEntity.badRequest().body("Entry is outside of the target directory");
         }
@@ -57,7 +57,7 @@ public class ConvertController {
         SVGConverterUtils.convertFromSVG(path.toString());
 
         File pngFile = new File(targetConvertPath + file.getOriginalFilename() + ".png");
-        if (isPathCorrect(path)) {
+        if (isPathCorrect(pngFile.toPath())) {
             return ResponseEntity.badRequest().body("Entry is outside of the target directory");
         }
         type = type.equals("jpg") ? "jpeg" : type.equals("tif") ? "tiff" : type;
@@ -81,7 +81,7 @@ public class ConvertController {
             return ResponseEntity.badRequest().body("Entry is outside of the target directory");
         }
 
-        SVGConverterUtils.convertToSVG("img/svg/convert/" + file.getOriginalFilename());
+        SVGConverterUtils.convertToSVG(targetConvertPath + file.getOriginalFilename());
 
         File svgFile = new File(targetConvertPath + file.getOriginalFilename() + ".svg");
 
