@@ -83,6 +83,9 @@ public class ConvertController {
         SVGConverterUtils.convertToSVG("img/svg/convert/" + file.getOriginalFilename());
 
         File svgFile = new File(targetConvertPath + file.getOriginalFilename() + ".svg");
+        if (!svgFile.toPath().normalize().startsWith(targetConvertPath)) {
+            return ResponseEntity.badRequest().body("Entry is outside of the target directory");
+        }
         byte[] svgBytes = Files.readAllBytes(svgFile.toPath());
 
         return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/svg+xml")).body(svgBytes);
