@@ -14,6 +14,7 @@ import java.io.*;
 import java.util.Iterator;
 
 public class DefaultImageConverterUtils {
+    private static final String ERROR_MESSAGE = "Error occurred: ";
 
     public static byte[] convert(MultipartFile file, String type) {
         try {
@@ -30,7 +31,7 @@ public class DefaultImageConverterUtils {
 
             return bos.toByteArray();
         } catch (Exception e) {
-            System.out.println("Error occurred: " + e.getMessage());
+            System.out.println(ERROR_MESSAGE + e.getMessage());
             return null;
         }
     }
@@ -64,7 +65,7 @@ public class DefaultImageConverterUtils {
 
             return bos.toByteArray();
         } catch (Exception e) {
-            System.out.println("Error occurred: " + e.getMessage());
+            System.out.println(ERROR_MESSAGE + e.getMessage());
             return null;
         }
     }
@@ -130,7 +131,7 @@ public class DefaultImageConverterUtils {
         try {
             return resize(file.getInputStream(), multiplier);
         } catch (IOException e) {
-            System.out.println("Error occurred: " + e.getMessage());
+            System.out.println(ERROR_MESSAGE + e.getMessage());
             return null;
         }
     }
@@ -139,7 +140,7 @@ public class DefaultImageConverterUtils {
         try {
             return resize(new FileInputStream(file), multiplier);
         } catch (IOException e) {
-            System.out.println("Error occurred: " + e.getMessage());
+            System.out.println(ERROR_MESSAGE + e.getMessage());
             return null;
         }
     }

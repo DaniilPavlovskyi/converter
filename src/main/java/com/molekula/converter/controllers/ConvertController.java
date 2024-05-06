@@ -27,9 +27,8 @@ public class ConvertController {
             */);
     private static final String UPLOAD_IMAGE = "Please upload an image file.";
     private static final String BAD_PATH = "Image path is outside of the target directory.";
-
-    private static final String targetConvertDirectory = "img/svg/convert/convert-";
-    private static final Path targetConvertPath = new File(targetConvertDirectory).toPath().normalize();
+    private static final String TARGET_CONVERT_DIRECTORY = "img/svg/convert/convert-";
+    private static final Path TARGET_CONVERT_PATH = new File(TARGET_CONVERT_DIRECTORY).toPath().normalize();
 
     @GetMapping("api/convert")
     public ResponseEntity<Object> convert(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) {
@@ -50,7 +49,7 @@ public class ConvertController {
             return ResponseEntity.badRequest().body("Please upload an SVG image file.");
         }
         byte[] fileBytes = file.getBytes();
-        Path path = Path.of(targetConvertPath +file.getOriginalFilename());
+        Path path = Path.of(TARGET_CONVERT_PATH +file.getOriginalFilename());
         if (isPathWrong(path)) {
             System.out.println(path);
             return ResponseEntity.badRequest().body(BAD_PATH);
@@ -58,7 +57,7 @@ public class ConvertController {
         Files.write(path, fileBytes);
         SVGConverterUtils.convertFromSVG(path.toString());
 
-        File pngFile = new File(targetConvertPath + file.getOriginalFilename() + ".png");
+        File pngFile = new File(TARGET_CONVERT_PATH + file.getOriginalFilename() + ".png");
         if (isPathWrong(pngFile.toPath())) {
             System.out.println(pngFile.toPath());
             return ResponseEntity.badRequest().body(BAD_PATH);
@@ -80,13 +79,13 @@ public class ConvertController {
             return ResponseEntity.badRequest().body(UPLOAD_IMAGE);
         }
         saveFile(file, file.getOriginalFilename(), "svg/convert/");
-        if (isPathWrong(Path.of(targetConvertPath + file.getOriginalFilename()))) {
+        if (isPathWrong(Path.of(TARGET_CONVERT_PATH + file.getOriginalFilename()))) {
             return ResponseEntity.badRequest().body("Entry is outside of the target directory");
         }
 
-        SVGConverterUtils.convertToSVG(targetConvertPath + file.getOriginalFilename());
+        SVGConverterUtils.convertToSVG(TARGET_CONVERT_PATH + file.getOriginalFilename());
 
-        File svgFile = new File(targetConvertPath + file.getOriginalFilename() + ".svg");
+        File svgFile = new File(TARGET_CONVERT_PATH + file.getOriginalFilename() + ".svg");
 
         if (isPathWrong(svgFile.toPath())) {
             return ResponseEntity.badRequest().body("Entry is outside of the target directory");
@@ -158,7 +157,7 @@ public class ConvertController {
     }
 
     private boolean isPathWrong(Path path) {
-        return !path.normalize().toString().startsWith(targetConvertPath.toString());
+        return !path.normalize().toString().startsWith(TARGET_CONVERT_PATH.toString());
     }
 
     private void saveFile(MultipartFile multipartFile, String fileName, String type) {

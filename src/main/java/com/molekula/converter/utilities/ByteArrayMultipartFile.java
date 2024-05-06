@@ -55,5 +55,7 @@ public class ByteArrayMultipartFile implements MultipartFile {
     }
 
     @Override
-    public void transferTo(java.io.File dest) throws IllegalStateException {}
+    public void transferTo(java.io.File dest) throws IllegalStateException {
+        throw new UnsupportedOperationException("Not implemented, because there is no need.");
+    }
 }
