@@ -57,7 +57,9 @@ public class ConvertController {
         SVGConverterUtils.convertFromSVG(path.toString());
 
         File pngFile = new File(targetConvertPath + file.getOriginalFilename() + ".png");
-
+        if (isPathCorrect(path)) {
+            return ResponseEntity.badRequest().body("Entry is outside of the target directory");
+        }
         type = type.equals("jpg") ? "jpeg" : type.equals("tif") ? "tiff" : type;
         byte[] pngBytes = Files.readAllBytes(pngFile.toPath());
         if (type.equals("png")) {
