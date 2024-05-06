@@ -15,9 +15,9 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Iterator;
 
-public class ImageConverterUtils {
+public class DefaultImageConverterUtils {
 
-    public static byte[] convertToDefaultType(MultipartFile file, String type) {
+    public static byte[] convert(MultipartFile file, String type) {
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
             BufferedImage originalImage = ImageIO.read(bis);
@@ -34,30 +34,6 @@ public class ImageConverterUtils {
         } catch (Exception e) {
             System.out.println("Error occurred: " + e.getMessage());
             return null;
-        }
-    }
-
-    public static void convertToSVG(String file) {
-        try {
-            Document doc = new Document();
-            DocumentBuilder builder = new DocumentBuilder(doc);
-
-            Shape shape = builder.insertImage(file);
-            shape.getShapeRenderer().save(file + ".svg", new ImageSaveOptions(SaveFormat.SVG));
-        } catch (Exception e) {
-            System.out.println("Error occurred: " + e.getMessage());
-        }
-    }
-
-    public static void convertFromSVG(String file) {
-        try {
-            Document doc = new Document();
-            DocumentBuilder builder = new DocumentBuilder(doc);
-
-            Shape shape = builder.insertImage(file);
-            shape.getShapeRenderer().save(file + ".png", new ImageSaveOptions(SaveFormat.PNG));
-        } catch (Exception e) {
-            System.out.println("Error occurred: " + e.getMessage());
         }
     }
 
@@ -126,7 +102,7 @@ public class ImageConverterUtils {
     }
 
 
-    public static byte[] resizeCommon(InputStream inputStream, double multiplier) throws IOException {
+    public static byte[] resize(InputStream inputStream, double multiplier) throws IOException {
         BufferedImage originalImage = ImageIO.read(inputStream);
         inputStream.close();
 
@@ -145,7 +121,7 @@ public class ImageConverterUtils {
 
     public static byte[] resize(MultipartFile file, double multiplier) {
         try {
-            return resizeCommon(file.getInputStream(), multiplier);
+            return resize(file.getInputStream(), multiplier);
         } catch (IOException e) {
             System.out.println("Error occurred: " + e.getMessage());
             return null;
@@ -154,7 +130,7 @@ public class ImageConverterUtils {
 
     public static byte[] resize(File file, double multiplier) {
         try {
-            return resizeCommon(new FileInputStream(file), multiplier);
+            return resize(new FileInputStream(file), multiplier);
         } catch (IOException e) {
             System.out.println("Error occurred: " + e.getMessage());
             return null;

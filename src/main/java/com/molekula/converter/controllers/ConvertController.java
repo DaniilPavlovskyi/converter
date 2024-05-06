@@ -1,6 +1,7 @@
 package com.molekula.converter.controllers;
 
-import com.molekula.converter.utilities.ImageConverterUtils;
+import com.molekula.converter.utilities.DefaultImageConverterUtils;
+import com.molekula.converter.utilities.SVGConverterUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,55 +27,76 @@ public class ConvertController {
             */);
 
     @GetMapping("api/convert")
-    public ResponseEntity<Object> convert(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) throws IOException {
-        if (isNotImage(file)) {
+    public ResponseEntity<Object> convert(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) {
+        if (isNotDefaultImage(file)) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
-        if (DEFAULT_IMAGE_FORMATS.contains(type)) {
-            byte[] imageData = ImageConverterUtils.convertToDefaultType(file, type);
-            return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/" + type)).body(imageData);
-        } else if (type.equals("svg")) {
+        if (!DEFAULT_IMAGE_FORMATS.contains(type)) {
+            return ResponseEntity.badRequest().body("Please select on of supported image type(" +
+                    "\"jpeg\", \"jpg\", \"png\", \"gif\", \"bmp\", \"tiff\", \"tif\")");
+        }
+        byte[] imageData = DefaultImageConverterUtils.convert(file, type);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/" + type)).body(imageData);
+         /*else if (type.equals("svg")) {
             saveFile(file, file.getOriginalFilename(), "svg/convert/");
-            ImageConverterUtils.convertToSVG("img/svg/convert/" + file.getOriginalFilename());
+            DefaultImageConverterUtils.convertToSVG("img/svg/convert/" + file.getOriginalFilename());
 
             File svgFile = new File("img/svg/convert/" + file.getOriginalFilename() + ".svg");
             byte[] svgBytes = Files.readAllBytes(svgFile.toPath());
 
             return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/svg+xml")).body(svgBytes);
+        }*/
+    }
+
+    @GetMapping("api/convert-from-svg")
+    public ResponseEntity<Object> convertFromSVG(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) throws IOException {
+        if (file.getContentType() == null || !file.getContentType().equals("image/svg+xml")) {
+            return ResponseEntity.badRequest().body("Please upload an SVG image file.");
         }
-        return ResponseEntity.badRequest().body("Please select type to convert.");
+        return null;
+    }
+
+    @GetMapping("api/convert-to-svg")
+    public ResponseEntity<Object> convertToSVG(@RequestParam("file") MultipartFile file) throws IOException {
+        if (isNotDefaultImage(file)) {
+            return ResponseEntity.badRequest().body("Please upload an image file.");
+        }
+        saveFile(file, file.getOriginalFilename(), "svg/convert/");
+        SVGConverterUtils.convertToSVG("img/svg/convert/" + file.getOriginalFilename());
+
+        File svgFile = new File("img/svg/convert/" + file.getOriginalFilename() + ".svg");
+        byte[] svgBytes = Files.readAllBytes(svgFile.toPath());
+
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/svg+xml")).body(svgBytes);
     }
 
     @GetMapping("api/resize")
     public ResponseEntity<Object> resizeImage(@RequestParam("file") MultipartFile file, @RequestParam("multiplier") double multiplier) throws IOException {
-        if (isNotImage(file)) {
+        if (isNotDefaultImage(file)) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
 
-        if (DEFAULT_IMAGE_FORMATS.stream().anyMatch(e -> file.getContentType().endsWith(e))) {
-            byte[] resizedImageData = ImageConverterUtils.resize(file, multiplier);
-            return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(resizedImageData);
-        } else if (file.getContentType().equals("image/svg+xml")) {
+        byte[] resizedImageData = DefaultImageConverterUtils.resize(file, multiplier);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(resizedImageData);
+         /*else if (file.getContentType().equals("image/svg+xml")) {
             saveFile(file, file.getOriginalFilename(), "svg/resize/");
             File svgFile = new File("img/svg/resize/" + file.getOriginalFilename());
 
-            ImageConverterUtils.convertFromSVG(svgFile.getPath());
+            DefaultImageConverterUtils.convertFromSVG(svgFile.getPath());
             File pngFile = new File("img/svg/resize/" + file.getOriginalFilename() + ".png");
-            byte[] resizedImg = ImageConverterUtils.resize(pngFile, multiplier);
+            byte[] resizedImg = DefaultImageConverterUtils.resize(pngFile, multiplier);
             Files.write(pngFile.toPath(), resizedImg);
 
-            ImageConverterUtils.convertToSVG(pngFile.getPath());
+            DefaultImageConverterUtils.convertToSVG(pngFile.getPath());
 
             byte[] svgBytes = Files.readAllBytes(Path.of("img/svg/resize/" + file.getOriginalFilename() + ".png.svg"));
             return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/svg+xml")).body(svgBytes);
-        } else {
-            return ResponseEntity.badRequest().body("This type of image file is not supported.");
-        }
+        }*/
     }
 
     @GetMapping("api/compress")
     public ResponseEntity<Object> compressImage(@RequestParam("file") MultipartFile file, @RequestParam("quality") double quality) {
-        if (isNotImage(file)) {
+        if (isNotDefaultImage(file)) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
 
@@ -84,7 +106,7 @@ public class ConvertController {
 
         try {
             byte[] originalImageData = file.getBytes();
-            byte[] compressedImageData = ImageConverterUtils.compress(file, quality);
+            byte[] compressedImageData = DefaultImageConverterUtils.compress(file, quality);
 
             double compressionRatio = 0;
             if (compressedImageData != null) {
@@ -104,19 +126,16 @@ public class ConvertController {
 
     @GetMapping("api/rotate")
     public ResponseEntity<Object> rotateImage(@RequestParam("file") MultipartFile file, @RequestParam("angle") double angle) throws IOException {
-        if (isNotImage(file)) {
+        if (isNotDefaultImage(file)) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
 
-        if (DEFAULT_IMAGE_FORMATS.stream().anyMatch(e -> file.getContentType().endsWith(e))) {
-            byte[] resizedImageData = ImageConverterUtils.rotate(file, angle);
-            return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(resizedImageData);
-        }
-        return ResponseEntity.badRequest().body("This type of image file is not supported.");
+        byte[] resizedImageData = DefaultImageConverterUtils.rotate(file, angle);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(resizedImageData);
     }
 
-    private boolean isNotImage(MultipartFile file) {
-        return file.isEmpty() || file.getContentType() == null || !IMAGE_FORMATS.contains(file.getContentType().split("/")[1]);
+    private boolean isNotDefaultImage(MultipartFile file) {
+        return file.isEmpty() || file.getContentType() == null || !DEFAULT_IMAGE_FORMATS.contains(file.getContentType().split("/")[1]);
     }
 
     private void saveFile(MultipartFile multipartFile, String fileName, String type) {
