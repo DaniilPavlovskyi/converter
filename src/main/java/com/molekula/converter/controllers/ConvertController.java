@@ -76,7 +76,7 @@ public class ConvertController {
 
     @GetMapping("api/convert-to-svg")
     public ResponseEntity<Object> convertToSVG(@RequestParam("file") MultipartFile file) throws IOException {
-        if (file.isEmpty() || file.getContentType() == null || isNotDefaultImage(file.getContentType())) {
+        if (file.isEmpty() || file.getContentType() == null || isNotSVG(file.getContentType())) {
             return ResponseEntity.badRequest().body(UPLOAD_IMAGE);
         }
         saveFile(file, file.getOriginalFilename(), "svg/convert/");
@@ -151,6 +151,10 @@ public class ConvertController {
 
     private boolean isNotDefaultImage(String type) {
         return !DEFAULT_IMAGE_FORMATS.contains(type);
+    }
+
+    private boolean isNotSVG(String type) {
+        return !type.equals("image/svg+xml");
     }
 
     private boolean isPathWrong(Path path) {

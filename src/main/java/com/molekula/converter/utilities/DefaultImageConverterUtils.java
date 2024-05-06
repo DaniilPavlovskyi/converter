@@ -1,7 +1,5 @@
 package com.molekula.converter.utilities;
 
-import com.aspose.words.*;
-import com.aspose.words.Shape;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.IIOImage;
@@ -38,6 +36,9 @@ public class DefaultImageConverterUtils {
     }
 
     public static byte[] compress(MultipartFile file, double multiplier) {
+        if (file.getContentType() == null) {
+            return null;
+        }
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
             BufferedImage originalImage = ImageIO.read(bis);
@@ -67,7 +68,12 @@ public class DefaultImageConverterUtils {
             return null;
         }
     }
+
     public static byte[] rotate(MultipartFile file, double angleDegrees) throws IOException {
+        if (file.getContentType() == null) {
+            return null;
+        }
+
         ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
         BufferedImage originalImage = ImageIO.read(bis);
         bis.close();
@@ -80,6 +86,7 @@ public class DefaultImageConverterUtils {
 
         return bos.toByteArray();
     }
+
     private static BufferedImage rotate(BufferedImage image, double angleDegrees) {
         double radians = Math.toRadians(angleDegrees);
         double sin = Math.abs(Math.sin(radians));
