@@ -21,19 +21,20 @@ import java.util.List;
 
 @RestController
 public class ConvertController {
-    //private static final List<String> IMAGE_FORMATS = Arrays.asList("jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif", "pbm", "pgm", "ppm", "svg+xml", "webp", "heic", "raw", "ico");
     private static final List<String> DEFAULT_IMAGE_FORMATS = Arrays.asList("jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif"/*
             for future
             ,"pbm", "pgm", "ppm" "svg", "webp", "heic", "raw", "ico"
             */);
+    private static final String UPLOAD_IMAGE = "Please upload an image file.";
+    private static final String BAD_PATH = "Image path is outside of the target directory.";
 
     private static final String targetConvertDirectory = "img/svg/convert/convert-";
     private static final Path targetConvertPath = new File(targetConvertDirectory).toPath().normalize();
 
     @GetMapping("api/convert")
     public ResponseEntity<Object> convert(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) {
-        if (isNotDefaultImage(file)) {
-            return ResponseEntity.badRequest().body("Please upload an image file.");
+        if (file.isEmpty() || file.getContentType() == null || isNotDefaultImage(file.getContentType())) {
+            return ResponseEntity.badRequest().body(UPLOAD_IMAGE);
         }
         if (!DEFAULT_IMAGE_FORMATS.contains(type)) {
             return ResponseEntity.badRequest().body("Please select on of supported image type(" +
@@ -45,14 +46,14 @@ public class ConvertController {
 
     @GetMapping("api/convert-from-svg")
     public ResponseEntity<Object> convertFromSVG(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) throws IOException {
-        if (file.getContentType() == null || !file.getContentType().equals("image/svg+xml")) {
+        if (file.isEmpty() || file.getContentType() == null || !file.getContentType().equals("image/svg+xml")) {
             return ResponseEntity.badRequest().body("Please upload an SVG image file.");
         }
         byte[] fileBytes = file.getBytes();
         Path path = Path.of(targetConvertPath +file.getOriginalFilename());
         if (isPathWrong(path)) {
             System.out.println(path);
-            return ResponseEntity.badRequest().body("Entry is outside of the target directory");
+            return ResponseEntity.badRequest().body(BAD_PATH);
         }
         Files.write(path, fileBytes);
         SVGConverterUtils.convertFromSVG(path.toString());
@@ -60,7 +61,7 @@ public class ConvertController {
         File pngFile = new File(targetConvertPath + file.getOriginalFilename() + ".png");
         if (isPathWrong(pngFile.toPath())) {
             System.out.println(pngFile.toPath());
-            return ResponseEntity.badRequest().body("Entry is outside of the target directory");
+            return ResponseEntity.badRequest().body(BAD_PATH);
         }
         type = type.equals("jpg") ? "jpeg" : type.equals("tif") ? "tiff" : type;
         byte[] pngBytes = Files.readAllBytes(pngFile.toPath());
@@ -75,8 +76,8 @@ public class ConvertController {
 
     @GetMapping("api/convert-to-svg")
     public ResponseEntity<Object> convertToSVG(@RequestParam("file") MultipartFile file) throws IOException {
-        if (isNotDefaultImage(file)) {
-            return ResponseEntity.badRequest().body("Please upload an image file.");
+        if (file.isEmpty() || file.getContentType() == null || isNotDefaultImage(file.getContentType())) {
+            return ResponseEntity.badRequest().body(UPLOAD_IMAGE);
         }
         saveFile(file, file.getOriginalFilename(), "svg/convert/");
         if (isPathWrong(Path.of(targetConvertPath + file.getOriginalFilename()))) {
@@ -97,32 +98,21 @@ public class ConvertController {
 
     @GetMapping("api/resize")
     public ResponseEntity<Object> resizeImage(@RequestParam("file") MultipartFile file, @RequestParam("multiplier") double multiplier) {
-        if (isNotDefaultImage(file)) {
-            return ResponseEntity.badRequest().body("Please upload an image file.");
+        if (file.isEmpty() || file.getContentType() == null || isNotDefaultImage(file.getContentType())) {
+            return ResponseEntity.badRequest().body(UPLOAD_IMAGE);
+        }
+        if (file.getContentType() == null) {
+            return null;
         }
 
         byte[] resizedImageData = DefaultImageConverterUtils.resize(file, multiplier);
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(resizedImageData);
-         /*else if (file.getContentType().equals("image/svg+xml")) {
-            saveFile(file, file.getOriginalFilename(), "svg/resize/");
-            File svgFile = new File("img/svg/resize/" + file.getOriginalFilename());
-
-            DefaultImageConverterUtils.convertFromSVG(svgFile.getPath());
-            File pngFile = new File("img/svg/resize/" + file.getOriginalFilename() + ".png");
-            byte[] resizedImg = DefaultImageConverterUtils.resize(pngFile, multiplier);
-            Files.write(pngFile.toPath(), resizedImg);
-
-            DefaultImageConverterUtils.convertToSVG(pngFile.getPath());
-
-            byte[] svgBytes = Files.readAllBytes(Path.of("img/svg/resize/" + file.getOriginalFilename() + ".png.svg"));
-            return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/svg+xml")).body(svgBytes);
-        }*/
     }
 
     @GetMapping("api/compress")
     public ResponseEntity<Object> compressImage(@RequestParam("file") MultipartFile file, @RequestParam("quality") double quality) {
-        if (isNotDefaultImage(file)) {
-            return ResponseEntity.badRequest().body("Please upload an image file.");
+        if (file.isEmpty() || file.getContentType() == null || isNotDefaultImage(file.getContentType())) {
+            return ResponseEntity.badRequest().body(UPLOAD_IMAGE);
         }
 
         if (quality < 0 || quality > 1) {
@@ -151,16 +141,16 @@ public class ConvertController {
 
     @GetMapping("api/rotate")
     public ResponseEntity<Object> rotateImage(@RequestParam("file") MultipartFile file, @RequestParam("angle") double angle) throws IOException {
-        if (isNotDefaultImage(file)) {
-            return ResponseEntity.badRequest().body("Please upload an image file.");
+        if (file.isEmpty() || file.getContentType() == null || isNotDefaultImage(file.getContentType())) {
+            return ResponseEntity.badRequest().body(UPLOAD_IMAGE);
         }
 
         byte[] resizedImageData = DefaultImageConverterUtils.rotate(file, angle);
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(resizedImageData);
     }
 
-    private boolean isNotDefaultImage(MultipartFile file) {
-        return file.isEmpty() || file.getContentType() == null || !DEFAULT_IMAGE_FORMATS.contains(file.getContentType().split("/")[1]);
+    private boolean isNotDefaultImage(String type) {
+        return !DEFAULT_IMAGE_FORMATS.contains(type);
     }
 
     private boolean isPathWrong(Path path) {
