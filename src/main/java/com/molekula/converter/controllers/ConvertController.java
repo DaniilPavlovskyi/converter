@@ -27,6 +27,9 @@ public class ConvertController {
             ,"pbm", "pgm", "ppm" "svg", "webp", "heic", "raw", "ico"
             */);
 
+    private static final String targetConvertDirectory = "img/svg/convert/";
+    private static final Path targetConvertPath = new File(targetConvertDirectory).toPath().normalize();
+
     @GetMapping("api/convert")
     public ResponseEntity<Object> convert(@RequestParam("file") MultipartFile file, @RequestParam("type") String type) {
         if (isNotDefaultImage(file)) {
@@ -49,7 +52,11 @@ public class ConvertController {
         Path path = Paths.get("img/svg/convert/" + file.getOriginalFilename());
         Files.write(path, fileBytes);
         SVGConverterUtils.convertFromSVG(path.toString());
-        File pngFile = new File("img/svg/convert/" + file.getOriginalFilename() + ".png");
+
+        File pngFile = new File(targetConvertPath + file.getOriginalFilename() + ".png");
+        if (!pngFile.toPath().normalize().startsWith(targetConvertPath)) {
+            return ResponseEntity.badRequest().body("Entry is outside of the target directory");
+        }
 
         type = type.equals("jpg") ? "jpeg" : type.equals("tif") ? "tiff" : type;
         byte[] pngBytes = Files.readAllBytes(pngFile.toPath());
@@ -68,9 +75,14 @@ public class ConvertController {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
         saveFile(file, file.getOriginalFilename(), "svg/convert/");
+        Path path = Path.of(targetConvertPath + file.getOriginalFilename());
+        if (!path.normalize().startsWith(targetConvertPath)) {
+            return ResponseEntity.badRequest().body("Entry is outside of the target directory");
+        }
+
         SVGConverterUtils.convertToSVG("img/svg/convert/" + file.getOriginalFilename());
 
-        File svgFile = new File("img/svg/convert/" + file.getOriginalFilename() + ".svg");
+        File svgFile = new File(targetConvertPath + file.getOriginalFilename() + ".svg");
         byte[] svgBytes = Files.readAllBytes(svgFile.toPath());
 
         return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/svg+xml")).body(svgBytes);
