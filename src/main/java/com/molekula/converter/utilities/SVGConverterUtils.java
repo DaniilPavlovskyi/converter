@@ -15,7 +15,6 @@ public class SVGConverterUtils {
             System.out.println("Error occurred: " + e.getMessage());
         }
     }
-
     public static void convertFromSVG(String file) {
         try {
             Document doc = new Document();
@@ -27,5 +26,4 @@ public class SVGConverterUtils {
             System.out.println("Error occurred: " + e.getMessage());
         }
     }
-
 }

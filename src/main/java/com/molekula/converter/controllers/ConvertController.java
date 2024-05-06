@@ -1,5 +1,6 @@
 package com.molekula.converter.controllers;
 
+import com.molekula.converter.utilities.ByteArrayMultipartFile;
 import com.molekula.converter.utilities.DefaultImageConverterUtils;
 import com.molekula.converter.utilities.SVGConverterUtils;
 import org.springframework.http.HttpStatus;
@@ -20,7 +21,7 @@ import java.util.List;
 
 @RestController
 public class ConvertController {
-    private static final List<String> IMAGE_FORMATS = Arrays.asList("jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif", "pbm", "pgm", "ppm", "svg+xml", "webp", "heic", "raw", "ico");
+    //private static final List<String> IMAGE_FORMATS = Arrays.asList("jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif", "pbm", "pgm", "ppm", "svg+xml", "webp", "heic", "raw", "ico");
     private static final List<String> DEFAULT_IMAGE_FORMATS = Arrays.asList("jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif"/*
             for future
             ,"pbm", "pgm", "ppm" "svg", "webp", "heic", "raw", "ico"
@@ -37,15 +38,6 @@ public class ConvertController {
         }
         byte[] imageData = DefaultImageConverterUtils.convert(file, type);
         return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/" + type)).body(imageData);
-         /*else if (type.equals("svg")) {
-            saveFile(file, file.getOriginalFilename(), "svg/convert/");
-            DefaultImageConverterUtils.convertToSVG("img/svg/convert/" + file.getOriginalFilename());
-
-            File svgFile = new File("img/svg/convert/" + file.getOriginalFilename() + ".svg");
-            byte[] svgBytes = Files.readAllBytes(svgFile.toPath());
-
-            return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/svg+xml")).body(svgBytes);
-        }*/
     }
 
     @GetMapping("api/convert-from-svg")
@@ -53,7 +45,21 @@ public class ConvertController {
         if (file.getContentType() == null || !file.getContentType().equals("image/svg+xml")) {
             return ResponseEntity.badRequest().body("Please upload an SVG image file.");
         }
-        return null;
+        byte[] fileBytes = file.getBytes();
+        Path path = Paths.get("img/svg/convert/" + file.getOriginalFilename());
+        Files.write(path, fileBytes);
+        SVGConverterUtils.convertFromSVG(path.toString());
+        File pngFile = new File("img/svg/convert/" + file.getOriginalFilename() + ".png");
+
+        type = type.equals("jpg") ? "jpeg" : type.equals("tif") ? "tiff" : type;
+        byte[] pngBytes = Files.readAllBytes(pngFile.toPath());
+        if (type.equals("png")) {
+            return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/png")).body(pngBytes);
+        } else {
+            byte[] imageData = DefaultImageConverterUtils.convert(new ByteArrayMultipartFile(pngBytes,
+                    file.getName(), file.getOriginalFilename(), file.getContentType()), type);
+            return ResponseEntity.ok().contentType(MediaType.parseMediaType("image/" + type)).body(imageData);
+        }
     }
 
     @GetMapping("api/convert-to-svg")
@@ -71,7 +77,7 @@ public class ConvertController {
     }
 
     @GetMapping("api/resize")
-    public ResponseEntity<Object> resizeImage(@RequestParam("file") MultipartFile file, @RequestParam("multiplier") double multiplier) throws IOException {
+    public ResponseEntity<Object> resizeImage(@RequestParam("file") MultipartFile file, @RequestParam("multiplier") double multiplier) {
         if (isNotDefaultImage(file)) {
             return ResponseEntity.badRequest().body("Please upload an image file.");
         }
