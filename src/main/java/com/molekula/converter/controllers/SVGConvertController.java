@@ -94,7 +94,7 @@ public class SVGConvertController {
             Path filePath = uploadPath.resolve(fileName);
             Files.write(filePath, fileBytes);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(ERROR_MESSAGE + e.getMessage());
         }
     }
 }
