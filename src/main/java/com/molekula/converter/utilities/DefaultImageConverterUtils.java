@@ -13,8 +13,11 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Iterator;
 
+import static com.molekula.converter.utilities.Variables.DEFAULT_IMAGE_FORMATS;
+import static com.molekula.converter.utilities.Variables.ERROR_MESSAGE;
+
 public class DefaultImageConverterUtils {
-    private static final String ERROR_MESSAGE = "Error occurred: ";
+
 
     public static byte[] convert(MultipartFile file, String type) {
         try {
@@ -143,5 +146,13 @@ public class DefaultImageConverterUtils {
             System.out.println(ERROR_MESSAGE + e.getMessage());
             return null;
         }
+    }
+
+    public static boolean isNotDefaultImage(String type) {
+        return DEFAULT_IMAGE_FORMATS.stream().noneMatch(type::contains);
+    }
+
+    public static boolean isFileEmptyOrNotDefaultType(MultipartFile file) {
+        return file.isEmpty() || file.getContentType() == null || isNotDefaultImage(file.getContentType());
     }
 }

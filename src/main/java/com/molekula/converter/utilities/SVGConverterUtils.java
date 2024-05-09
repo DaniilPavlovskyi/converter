@@ -2,6 +2,8 @@ package com.molekula.converter.utilities;
 
 import com.aspose.words.*;
 
+import static com.molekula.converter.utilities.Variables.ERROR_MESSAGE;
+
 public class SVGConverterUtils {
 
     public static void convertToSVG(String file) {
@@ -12,7 +14,7 @@ public class SVGConverterUtils {
             Shape shape = builder.insertImage(file);
             shape.getShapeRenderer().save(file + ".svg", new ImageSaveOptions(SaveFormat.SVG));
         } catch (Exception e) {
-            System.out.println("Error occurred: " + e.getMessage());
+            System.out.println(ERROR_MESSAGE + e.getMessage());
         }
     }
     public static void convertFromSVG(String file) {
@@ -23,7 +25,7 @@ public class SVGConverterUtils {
             Shape shape = builder.insertImage(file);
             shape.getShapeRenderer().save(file + ".png", new ImageSaveOptions(SaveFormat.PNG));
         } catch (Exception e) {
-            System.out.println("Error occurred: " + e.getMessage());
+            System.out.println(ERROR_MESSAGE + e.getMessage());
         }
     }
 }
