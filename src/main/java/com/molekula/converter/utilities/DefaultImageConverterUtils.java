@@ -140,6 +140,7 @@ public class DefaultImageConverterUtils {
         return file.isEmpty() ||
                 file.getContentType() == null ||
                 file.getContentType().split("/") == null ||
+                file.getContentType().split("/")[1] == null ||
                 isNotDefaultImage(file.getContentType());
     }
 }
