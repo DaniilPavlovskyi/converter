@@ -40,9 +40,6 @@ public class DefaultImageConverterUtils {
     }
 
     public static byte[] compress(MultipartFile file, double multiplier) {
-        if (file.getContentType() == null) {
-            return null;
-        }
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
             BufferedImage originalImage = ImageIO.read(bis);
@@ -74,10 +71,6 @@ public class DefaultImageConverterUtils {
     }
 
     public static byte[] rotate(MultipartFile file, double angleDegrees) throws IOException {
-        if (file.getContentType() == null) {
-            return null;
-        }
-
         ByteArrayInputStream bis = new ByteArrayInputStream(file.getBytes());
         BufferedImage originalImage = ImageIO.read(bis);
         bis.close();
@@ -139,20 +132,14 @@ public class DefaultImageConverterUtils {
         }
     }
 
-    public static byte[] resize(File file, double multiplier) {
-        try {
-            return resize(new FileInputStream(file), multiplier);
-        } catch (IOException e) {
-            System.out.println(ERROR_MESSAGE + e.getMessage());
-            return null;
-        }
-    }
-
     public static boolean isNotDefaultImage(String type) {
         return DEFAULT_IMAGE_FORMATS.stream().noneMatch(type::contains);
     }
 
     public static boolean isFileEmptyOrNotDefaultType(MultipartFile file) {
-        return file.isEmpty() || file.getContentType() == null || isNotDefaultImage(file.getContentType());
+        return file.isEmpty() ||
+                file.getContentType() == null ||
+                file.getContentType().split("/") == null ||
+                isNotDefaultImage(file.getContentType());
     }
 }

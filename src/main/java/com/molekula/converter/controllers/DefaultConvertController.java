@@ -36,9 +36,6 @@ public class DefaultConvertController {
         if (isFileEmptyOrNotDefaultType(file)) {
             return ResponseEntity.badRequest().body(UPLOAD_IMAGE);
         }
-        if (file.getContentType() == null) {
-            return null;
-        }
 
         byte[] resizedImageData = DefaultImageConverterUtils.resize(file, multiplier);
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.getContentType())).body(resizedImageData);
